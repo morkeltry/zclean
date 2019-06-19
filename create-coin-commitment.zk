@@ -1,0 +1,76 @@
+
+open String;
+open Extended_lib;
+
+//TODO: change lr_bit to Boolean, do multiplication outside prover scope
+let main = fun (r : field, v : field, flag : field, n : field, M0 : field, M1 : field, M2 : field, M3 : field, lr_bit : field, ()) => {
+
+// (1: validity & 2: ownership)
+// I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
+// ie, hashed with its Merkel sibling M3, then all hashed with Merkel parent M2, then all hashed with Merkel grandparent M1
+// gives Merkel root M0
+
+// Further I (2) know a secret r, a value v and flag which concatenated and hashed give t.
+
+// I know r, flag s.t. HS of {r,v,flag} = some t, s.t.
+// t= HM (M0,(M1,(M2,(M3, t))))
+
+// (3: non-inflation)
+// TODO: My output value vo is (lt)equal to the value v of the original coin
+// v=1
+
+// (4: Flag-carrying)
+// TODO: My output commitment does not add extra 'bits' to the flag
+// TODO: ie, flag*discarded_flags = flag
+// My output commitment has the same flag to the flag of the previous commitment
+
+// (5: nullifiability)
+// The nullifier n refers to that commitment t.
+// ie r*n=t
+
+
+
+// TODO : use list(bool) not string
+let hash_string = fun (pre_image : list(bool)) => {
+  let params = "bn128-params";
+  Pedersen.digest_bits(params, pre_image);
+};
+
+
+// TODO : use list(bool) not string
+let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
+  let secret_string = to_string(secret);
+  let val1_string = to_string(val1);
+  let val2_string = to_stringt(val2);
+  let hashable = String.concat(String.concat(secret_string,val1),val2);
+
+  hash_string(hashable);
+};
+
+// TODO : use list(bool) not string
+let hash_merkle_nodes = fun (n1 : field, n2 : field) => {
+  let val1_string = to_string(val1);
+  let val2_string = to_string(val2);
+
+  hash_string (String.concat(val1_string,val2_string)) ;
+};
+
+let t = hashed_concat (r,v,flag)
+// TODO: currently HM(M3,t) != HM(t,M3) - fix this so that either HM takes a direction, or HM(M3,t) == HM(t,M3)
+// in such a way that M3 cannot be faked to give desired result. (commutative non-invertible operation possible?)
+let calculated_root = hash_merkle_nodes = (HM (M1, HM (M2, HM (M3, t)));
+
+  let y = Prover {
+    if (Field.is_square(x)) {
+      Field.sqrt(x);
+    } else {
+      0;
+    };
+  };
+
+  assert_r1(calculated_root, 1, M0);
+  assert_r1(hash_commitment(r,v,flag), 1, t);
+  assert_r1(v, 1, v);
+  assert_r1(flag, 1, flag);
+  assert_r1(r, n, t);
+};
