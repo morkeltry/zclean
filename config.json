@@ -1,0 +1,20 @@
+[
+    {
+
+        "peer": 4000,
+        "redisPort": 4001
+
+    },
+    {
+
+        "peer": 5000,
+        "redisPort": 5001
+
+    },
+    {
+
+        "peer": 6000,
+        "redisPort": 6001
+
+    }
+]

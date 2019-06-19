@@ -1,0 +1,25 @@
+ version: "3.6"
+
+ services:
+  redis1:
+    image: redis
+    ports:
+      - "4001:6379"
+    volumes:
+      - ./data/redis1:/data
+    restart: always
+  redis2:
+    image: redis
+    ports:
+      - "5001:6379"
+    volumes:
+      - ./data/redis2:/data
+    restart: always
+  redis3:
+    image: redis
+    ports:
+      - "5002:6379"
+    volumes:
+      - ./data/redis3:/data
+    restart: always
+
