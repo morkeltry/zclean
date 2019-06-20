@@ -1,9 +1,9 @@
 
-open String;
+// open String;
 open Extended_lib;
 
 //mh0 is a Merkel tree root - only public input
-let main = fun ( mh0 : field), (nf : field)()) => {
+let main = fun ( mh0 : field, (nf : field), ()) => {
 
 // (1: validity & 2: ownership)
 // I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
@@ -32,30 +32,31 @@ let main = fun ( mh0 : field), (nf : field)()) => {
 //NB: In variable names, xxx_bool is generally used to refer to the list(boolean) version of a value. _Not_ bool/ list(bool) !
 
 
+let params = load_pedersen_params("bn128-params");
+
 let hash_bits = fun (pre_image : list(boolean)) => {
-  let params = "bn128-params";
   Pedersen.digest_bits(params, pre_image);
 };
 
-let hash_field = (pre_image : field) => {
-  let params = "bn128-params";
-  Pedersen.digest_bits(params, to_bits(pre_image));
+let hash_field = fun (pre_image : field) => {
+  Pedersen.digest_bits(params, Field.to_bits(pre_image));
 };
 
 let order_fields = fun (a: field, b_tuple: (field, boolean)) => {
   let (b, lr_bit_b) = b_tuple;
-  let result = select(lr_bit_b, ~then_=(a,b), ~else_=(b,a));
+  select(lr_bit_b, ~then_=(a,b), ~else_=(b,a));
 
   // append (dir*a, not dir*b, not dir * a, dir * b)
   // .filter (nonzero)
   // .map (field -> list(bool))
   // return result[0]::result[1];
-}
+
+};
 
 let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
-  let secret_bool = to_bits(secret);
-  let val1_bool = to_bits(val1);
-  let val2_bool = to_bits(val2);
+  let secret_bool = Field.to_bits(secret);
+  let val1_bool = Field.to_bits(val1);
+  let val2_bool = Field.to_bits(val2);
   let hashable = secret_bool@val1_bool@val2_bool ;
 
   //TODO: check bit length of 3way concat (defaults are OK? )
@@ -64,37 +65,44 @@ let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
 
 
 let hash_merkle_nodes = fun (ordered_nodes_tuple : (field, field)) => {
-  let val1_bool = to_bits( fst(ordered_nodes_tuple) );
-  let val2_bool = to_bits( snd(ordered_nodes_tuple) );
+  let val1_bool = Field.to_bits( fst(ordered_nodes_tuple) );
+  let val2_bool = Field.to_bits( snd(ordered_nodes_tuple) );
 
-  hash_bits ( val1_bool, val2_bool ) ;
+  hash_bits ( val1_bool @ val2_bool ) ;
 };
 
-TODO: // pass private inputs to Prover
-  let y = Prover {
-    Get the following:
-    v : field, flag : field, l1_sibling : (field, boolean), l2_sibling : (field, boolean), l3_sibling : (field, boolean)
-   r,flag,r',flag', v ,v' //randomness and flag of the old and new cm (' are the new)
-   // if (Field.is_square(x)) {
-   //   Field.sqrt(x);
-   // } else {
-   //   0;
-   // };
-  };
+// TODO: pass private inputs to Prover
+  let (r, v, flag, l1_sibling, l2_sibling, l3_sibling, r', flag', v') =
+    Prover {
+      let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = read_lines ("transfer_secrets") ;
+      //let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = [998, 1, 0, "4567,0", "7385,1", "2372,0", 999, 1, 0];
 
+      let sep = String.get (",",0i);
+      let [l1_hash, l1_dir] = String.split_on_char(sep, l1_sib_string);
+      let l1_sibling = (l1_hash, l1_dir) ;
+      let [l2_hash, l2_dir] =  String.split_on_char(sep, l2_sib_string);
+      let l2_sibling = (l2_hash, l2_dir) ;
+      let [l3_hash, l3_dir] =  String.split_on_char(sep, l3_sib_string);
+      let l3_sibling = (l3_hash, l3_dir) ;
+
+      //  Get the following:
+      //  v : field, flag : field, l1_sibling : (field, boolean), l2_sibling : (field, boolean), l3_sibling : (field, boolean)
+      // r,flag,r',flag', v ,v'
+
+      (r, v, flag, l1_sibling, l2_sibling, l3_sibling, r', flag', v') ;
+    };
 
   let t = hash_commitment (r, v, flag);
 
-  let level3_tuple = hash_merkle_nodes(order_fields(t, l3_sibling));
-  let level2_tuple = hash_merkle_nodes(order_fields(level3_tuple, level2_tuple));
-  let level1_tuple = hash_merkle_nodes(order_fields(level2_tuple, level1_tuple));
-  let calculated_root = hash_merkle_nodes(order_fields(level1_tuple, level2_tuple));
+  let level2_parent = hash_merkle_nodes(order_fields(t, l3_sibling));
+  let level1_parent = hash_merkle_nodes(order_fields(level2_parent, l2_sibling));
+  let calculated_root = hash_merkle_nodes(order_fields(level1_parent, l1_sibling));
 
   // nullifier will require second hashing with secret in order to sign that it refers to this commitment and not another
   // maliciously signed with the same secret but different values
   let n = hash_nullifier_commitment (r, t);
 
-  assert_r1(calculated_root, 1, M0);
+  assert_r1(calculated_root, 1, mh0);
  // assert_r1(t, 1, t);
   assert_r1(v, 1, v');
   assert_r1(flag, 1, flag');
