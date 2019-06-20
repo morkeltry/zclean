@@ -1,0 +1,6 @@
+all:
+	ocamlbuild -use-ocamlfind -pkg core -tag "ppx(ppx-jane -as-ppx)" -tag thread -tag debug -tag bin_annot -tag short_paths -cflags "-w A-4-33-40-41-42-43-34-44" -cflags -strict-sequence merkle.native
+
+clean:
+	rm -rf _build
+	rm merkle.native
