@@ -1,0 +1,4 @@
+# dune exec --root .create-coin-commitment.snarky.build ./create-coin-commitment_gen.exe -- generate-keys --proving-key=create-coin-commitment.pk --verification-key=create-coin-commitment.vk
+# OCAMLPARAM: unset
+$ /usr/bin/nproc > /tmp/dune26c0b9.output 2> /dev/null
+$ /home/laff/.opam/4.07.1/bin/ocamlc.opt -config > /tmp/dune58ab15.output
