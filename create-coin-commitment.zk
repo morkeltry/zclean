@@ -95,6 +95,7 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
       let r = Field.of_string(r);
       let v = Field.of_string(v);
       let flag = Field.of_string(flag);
+  Field.print (r);
 
       let r' = Field.of_string(r');
       let v' = Field.of_string(v');
@@ -105,6 +106,8 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
       // r,flag,r',flag', v ,v'
 
 
+  // let level2_parent = hash_merkle_nodes (order_nodes (fst(l3_sibling), fst(l3_sibling)));
+  //Field.print (level2_parent);
       (r, v, flag, (l1_sibling, l2_sibling, l3_sibling), r', flag', v') ;
     };
 
