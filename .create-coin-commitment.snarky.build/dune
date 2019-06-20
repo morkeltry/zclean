@@ -1,5 +1,0 @@
-
-(executable
-  (name create-coin-commitment_gen)
-  (libraries snarky core_kernel)
-  (flags (:standard -short-paths -w -A)))
