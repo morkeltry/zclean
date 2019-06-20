@@ -63,6 +63,14 @@ let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
   hash_bits(hashable);
 };
 
+let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
+  let secret_bool = Field.to_bits(secret);
+  let n_bool = Field.to_bits(n);
+  let hashable = secret_bool@n_bool ;
+
+  hash_bits(hashable);
+};
+
 
 let hash_merkle_nodes = fun (ordered_nodes_tuple : (field, field)) => {
   let val1_bool = Field.to_bits( fst(ordered_nodes_tuple) );
