@@ -42,14 +42,12 @@ _.times(CONFIG.length).forEach(key => {
   config.buslane.map[key] = {
     name: `peer${key}`,
     port: 4000 + (key * 1000),
-    ingresses: ['p2p'],
+    ingresses: ['p2p', 'wallet'],
     // Using default buslane certs for now, very secure :/
     // ssl_key_path: './ssl/host.key',
     // ssl_cert_path: './ssl/host.cert'
   }
 })
-
-console.inspect('CONFIG', config)
 
 const buslane = new Buslane(config.buslane)
 
@@ -57,26 +55,25 @@ const p2p = {
   ping: () => 'PONG'
 }
 
-buslane.registerIngress('p2p', p2p);
+const wallet = {
+  status: () => {console.log('status checked'); return 'OK';}
+}
+
+buslane.registerIngress('p2p', p2p)
+buslane.registerIngress('wallet', wallet)
 
 const peers = Object.keys(buslane).filter(s => s.startsWith('peer')).map(peerName => buslane[peerName])
 
-console.inspect(peers)
-
-// p2p loop
+// heatbeat
 setInterval(async () => {
-  console.log(`peer${peerId}: p2p loop`)
-
   for (let i = 0; i < peers.length; i++) {
     try {
-      console.log(`peer ${i} says ${await peers[i].p2p.ping()}`)
+      console.log(`${(new Date()).getTime()}: peer ${i} says ${await peers[i].p2p.ping()}`)
     } catch (err) {
       console.log(chalk.red(`could not get heartbeat from peer ${i}`))
     }
   }
 
-}, 1000)
+}, 2000)
 
-process.on('uncaughtException', function (err) {
-
-})
+process.on('uncaughtException', function (err) {})
