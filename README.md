@@ -71,6 +71,25 @@ Something like:
 
 ## Running the code
 
+`snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
+
+#### NB:
+on first run, `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128` gives error:
+```
+File "create-coin-commitment_gen.ml", line 4, characters 24-53:
+Error: Signature mismatch:
+       ...
+       In module R1CS_constraint_system:
+       Values do not match:
+         val digest : t -> Core.Md5.t
+       is not included in
+         val digest : t -> Core_kernel.Md5.t
+       File "src/backend_intf.ml", line 91, characters 4-27:
+         Expected declaration
+       File "src/libsnark.ml", line 945, characters 4-27: Actual declaration
+```
+Don't worry - run it again. 
+
 ### Requirements:
 
 * Docker(to run the blockchain datastore)
