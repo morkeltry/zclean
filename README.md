@@ -53,6 +53,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 
 ### Starting a demo env
 
+* run `./install.sh`
 * `docker-compose up` to start the redis instances
 * open 6 term windows
 * in 3 of them, run `./startPeer.sh 0, 1 and 2`
