@@ -47,9 +47,10 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 
 ### Requirements:
 
-* Docker(to run the blockchain datastore)
-* Snarky installed (good luck with that)
-* node.js to run the client
+* Docker(to run the blockchain datastore. redis ATM)
+* Ocaml via opam, switched to 4.07.1
+* Snarky installed (good luck with that :D)
+* node.js 12 to run the client and the peer
 
 ### Starting a demo env
 

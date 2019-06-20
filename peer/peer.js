@@ -49,14 +49,39 @@ _.times(CONFIG.length).forEach(key => {
   }
 })
 
+console.inspect(config)
+
 const buslane = new Buslane(config.buslane)
 
 const p2p = {
-  ping: () => 'PONG'
+  ping: () => 'PONG',
+  receiveTransfer: (blockPrecursor) => {
+    // check everything(snarky: verify proof, blockexplore: nullifier absent)
+    // create new cm
+    // write block
+    // propose the block
+    // if all accept
+    // add the block
+    // update the mktree
+    // store the secret values(to spend the new note)
+  },
+  validateBlock: (block) => {
+    // check the block(snarky verify proof)
+    // if all good
+    // add the block
+    // update the mktree(ocaml mktree)
+  }
 }
 
 const wallet = {
-  status: () => {console.log('status checked'); return 'OK';}
+  status: () => { console.log('status checked'); return 'OK'; },
+  transfer: (targetPeer) => {
+    // get secret values
+    // mktree get old root and old path of the to be spent cm
+    // snarky make the proofs
+    // pass it to targetPeer
+    peers[targetPeer].receiveTransfer(blockPrecursor)
+  }
 }
 
 buslane.registerIngress('p2p', p2p)
@@ -64,7 +89,7 @@ buslane.registerIngress('wallet', wallet)
 
 const peers = Object.keys(buslane).filter(s => s.startsWith('peer')).map(peerName => buslane[peerName])
 
-// heatbeat
+// heartbeat
 setInterval(async () => {
   for (let i = 0; i < peers.length; i++) {
     try {
@@ -76,4 +101,4 @@ setInterval(async () => {
 
 }, 2000)
 
-process.on('uncaughtException', function (err) {})
+process.on('uncaughtException', function (err) { })

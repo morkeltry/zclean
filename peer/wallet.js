@@ -67,6 +67,10 @@ async function main() {
       switch(cmd) {
         case 'help': printHelp;break;
         case 'status': console.log(`peer is ${await peer.wallet.status()}`);break;
+        case 'transfer':
+          // ask peer to make a transfer, check it's not self transfering
+          await peer.wallet.transfer(i)
+          break;
 
         default: printHelp('Unrecognized Command');break;
       }
