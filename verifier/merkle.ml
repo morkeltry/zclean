@@ -7,10 +7,7 @@ let pow a b =
     if n = 0L then a else pow' (Int64.mul a (if Int64.rem n 2L = 0L then 1L else x)) (Int64.mul x x) (Int64.div n 2L) in
   pow' 1L a b
 
-type merkle_tree =
-  | Leaf of hash
-  | Node of (hash*merkle_tree*merkle_tree)
-  | PartialNode of (hash * merkle_tree)
+type merkle_tree = Merkle_tree_t.merkle_tree
 
 let pedersen_hash (a: string) (b: string) =
   let inp = Unix.open_process_in ("lib/crypto_util/crypto_util.exe pedersen " ^ a ^ b) in
@@ -33,17 +30,17 @@ let create_tree x depth =
   let rec aux tree i =
     if i >= depth then tree else
       match tree with
-      | PartialNode(hash, l) -> aux (PartialNode((pedersen_hash hash uncom.(i)),PartialNode(hash,l))) (i+1)
-      | Leaf(hash) -> aux (PartialNode((pedersen_hash hash uncom.(i)),Leaf(hash))) (i+1)
+      | `PartialNode(hash, l) -> aux (`PartialNode((pedersen_hash hash uncom.(i)),`PartialNode(hash,l))) (i+1)
+      | `Leaf(hash) -> aux (`PartialNode((pedersen_hash hash uncom.(i)),`Leaf(hash))) (i+1)
       | _ -> assert false
   in
-  aux (Leaf(x)) 0
+  aux (`Leaf(x)) 0
 
 let get_root (tree : merkle_tree) =
   match tree with
-  | Node(h,_,_) -> h
-  | PartialNode(h,_) -> h
-  | Leaf(h) -> h
+  | `Node(h,_,_) -> h
+  | `PartialNode(h,_) -> h
+  | `Leaf(h) -> h
 
 let insert_leaf (tree : merkle_tree) x depth (pos : int64) =
   assert (pos >= 0L);
@@ -63,23 +60,23 @@ let insert_leaf (tree : merkle_tree) x depth (pos : int64) =
   let to_ins = create_tree x height in
 
   let mix i t1 t2 = match t1,t2 with
-    | Leaf(h1),Leaf(h2) -> Node(pedersen_hash h1 h2, Leaf(h1), Leaf(h2))
-    | PartialNode(h1,l1), PartialNode(h2,l2) -> Node(pedersen_hash h1 h2, PartialNode(h1,l1), PartialNode(h2,l2))
-    | Node(h1,l1,r), PartialNode(h2,l2) -> Node(pedersen_hash h1 h2, Node(h1,l1,r), PartialNode(h2,l2))
-    | Node(h1,l1,r1), Node(h2,l2,r2) -> Node(pedersen_hash h1 h2, Node(h1,l1,r1), Node(h2,l2,r2))
+    | `Leaf(h1),`Leaf(h2) -> `Node(pedersen_hash h1 h2, `Leaf(h1), `Leaf(h2))
+    | `PartialNode(h1,l1), `PartialNode(h2,l2) -> `Node(pedersen_hash h1 h2, `PartialNode(h1,l1), `PartialNode(h2,l2))
+    | `Node(h1,l1,r), `PartialNode(h2,l2) -> `Node(pedersen_hash h1 h2, `Node(h1,l1,r), `PartialNode(h2,l2))
+    | `Node(h1,l1,r1), `Node(h2,l2,r2) -> `Node(pedersen_hash h1 h2, `Node(h1,l1,r1), `Node(h2,l2,r2))
     | _ -> assert false
   in
 
   let rec propagate tree i =
     if i <= height+1 then begin
       match tree with
-      | PartialNode(_,l) -> mix (i-1) l to_ins
+      | `PartialNode(_,l) -> mix (i-1) l to_ins
       | _ -> assert false
     end
     else begin
       match tree with
-      | Node(_,l,r) -> mix (i-1) l (propagate r (i-1))
-      | PartialNode(_,l) -> let l2 = propagate l (i-1) in PartialNode(pedersen_hash (get_root l2) uncom.(i-1), l2)
+      | `Node(_,l,r) -> mix (i-1) l (propagate r (i-1))
+      | `PartialNode(_,l) -> let l2 = propagate l (i-1) in `PartialNode(pedersen_hash (get_root l2) uncom.(i-1), l2)
       | _ -> assert false
     end
   in
@@ -114,7 +111,7 @@ let get_witness (tree : merkle_tree) depth (pos : int64) =
     let res = Array.make depth (String.make 32 '0') in
     let rec aux i tree =
       match tree with
-      | Node(_, l, r) ->
+      | `Node(_, l, r) ->
           begin
             if array.(64-depth+i) then
               begin
@@ -127,7 +124,7 @@ let get_witness (tree : merkle_tree) depth (pos : int64) =
                 aux (i+1) l;
               end
           end
-      | PartialNode(_,l) ->
+      | `PartialNode(_,l) ->
           begin
             if not array.(64-depth+i) then
               begin
@@ -137,15 +134,10 @@ let get_witness (tree : merkle_tree) depth (pos : int64) =
             else
               assert false
           end
-      | Leaf(_) -> ();
+      | `Leaf(_) -> ();
     in
     aux 0 tree;
     res
   in
   let hashes = get_hashes array_pos in
   String.concat "" (Array.to_list hashes)
-
-let () =
-  let t = create_tree "ab" 4 in
-  let t = insert_leaf t "bc" 4 0L in
-  Printf.printf "%s\n" (get_witness t 4 0L)
