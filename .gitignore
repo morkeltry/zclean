@@ -1,4 +1,7 @@
 # Logs
+
+dump.rdb
+
 logs
 *.log
 npm-debug.log*
