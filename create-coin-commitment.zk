@@ -2,8 +2,8 @@
 open String;
 open Extended_lib;
 
-//TODO: change lr_bit to Boolean, do multiplication outside prover scope
-let main = fun (r : field, v : field, flag : field, n : field, M0 : field, M1 : field, M2 : field, M3 : field, lr_bit : field, ()) => {
+//mh0 is a Merkel tree root - only public input
+let main = fun ( mh0 : field), ()) => {
 
 // (1: validity & 2: ownership)
 // I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
@@ -24,43 +24,56 @@ let main = fun (r : field, v : field, flag : field, n : field, M0 : field, M1 : 
 // TODO: ie, flag*discarded_flags = flag
 // My output commitment has the same flag to the flag of the previous commitment
 
+//TODO: make nullifier safe by using hash not multiply.
 // (5: nullifiability)
 // The nullifier n refers to that commitment t.
-// ie r*n=t
+// ie safer (hashed) version of r*n=t
+
+//NB: In variable names, xxx_bool is generally used to refer to the list(boolean) version of a value. _Not_ bool/ list(bool) !
 
 
-
-// TODO : use list(bool) not string
-let hash_string = fun (pre_image : list(bool)) => {
+let hash_bits = fun (pre_image : list(boolean)) => {
   let params = "bn128-params";
   Pedersen.digest_bits(params, pre_image);
 };
 
+let hash_field = (pre_image : field) => {
+  let params = "bn128-params";
+  Pedersen.digest_bits(params, to_bits(pre_image));
+};
 
-// TODO : use list(bool) not string
+let order_fields = fun (a: field, b_tuple: (field, boolean)) => {
+  let (b, lr_bit_b) = b_tuple;
+  let result = select(lr_bit_b, ~then_=(a,b), ~else_=(b,a));
+
+  // append (dir*a, not dir*b, not dir * a, dir * b)
+  // .filter (nonzero)
+  // .map (field -> list(bool))
+  // return result[0]::result[1];
+}
+
 let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
-  let secret_string = to_string(secret);
-  let val1_string = to_string(val1);
-  let val2_string = to_stringt(val2);
-  let hashable = String.concat(String.concat(secret_string,val1),val2);
+  let secret_bool = to_bits(secret);
+  let val1_bool = to_bits(val1);
+  let val2_bool = to_bits(val2);
+  let hashable = secret_bool@val1_bool@val2_bool ;
 
-  hash_string(hashable);
+  //TODO: check bit length of 3way concat (defaults are OK? )
+  hash_bits(hashable);
 };
 
-// TODO : use list(bool) not string
-let hash_merkle_nodes = fun (n1 : field, n2 : field) => {
-  let val1_string = to_string(val1);
-  let val2_string = to_string(val2);
 
-  hash_string (String.concat(val1_string,val2_string)) ;
+let hash_merkle_nodes = fun (ordered_nodes_tuple : (field, field)) => {
+  let val1_bool = to_bits( fst(ordered_nodes_tuple) );
+  let val2_bool = to_bits( snd(ordered_nodes_tuple) );
+
+  hash_bits ( val1_bool, val2_bool ) ;
 };
 
-let t = hashed_concat (r,v,flag)
-// TODO: currently HM(M3,t) != HM(t,M3) - fix this so that either HM takes a direction, or HM(M3,t) == HM(t,M3)
-// in such a way that M3 cannot be faked to give desired result. (commutative non-invertible operation possible?)
-let calculated_root = hash_merkle_nodes = (HM (M1, HM (M2, HM (M3, t)));
-
+TODO: // pass private inputs to Prover
   let y = Prover {
+    Get the following:
+    v : field, flag : field, l1_sibling : (field, boolean), l2_sibling : (field, boolean), l3_sibling : (field, boolean)
     if (Field.is_square(x)) {
       Field.sqrt(x);
     } else {
@@ -68,9 +81,21 @@ let calculated_root = hash_merkle_nodes = (HM (M1, HM (M2, HM (M3, t)));
     };
   };
 
+
+  let t = hash_commitment (r, v, flag);
+
+  let level3_tuple = hash_merkle_nodes(order_fields(t, l3_sibling));
+  let level2_tuple = hash_merkle_nodes(order_fields(level3_tuple, level2_tuple));
+  let level1_tuple = hash_merkle_nodes(order_fields(level2_tuple, level1_tuple));
+  let calculated_root = hash_merkle_nodes(order_fields(level1_tuple, level2_tuple));
+
+  // nullifier will require second hashing with secret in order to sign that it refers to this commitment and not another
+  // maliciously signed with the same secret but different values
+  let n = hash_nullifier_commitment (r, t);
+
   assert_r1(calculated_root, 1, M0);
-  assert_r1(hash_commitment(r,v,flag), 1, t);
+  assert_r1(t, 1, t);
   assert_r1(v, 1, v);
   assert_r1(flag, 1, flag);
-  assert_r1(r, n, t);
+  assert_r1(n, 1, n);
 };
