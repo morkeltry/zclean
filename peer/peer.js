@@ -60,6 +60,7 @@ const peers = Object.keys(buslane).filter(s => s.startsWith('peer')).map(peerNam
 // P2P
 const p2p = {
   ping: () => 'PONG',
+
   receiveTransfer: async (blockPrecursor) => {
     try {
       console.inspect({ label: 'entering receive transfer', receivedBlockPrecursor: blockPrecursor })
@@ -81,19 +82,20 @@ const p2p = {
       // write block
       const newBlock = await blockCooker.makeBlock(blockPrecursor, potentialSecret, proof, nullifier)
 
-      // publish nullifier
-
+      console.inspect({ label: 'receiveTransfer:proposingBlock', newBlock })
 
       // propose the block
       let success = true
       for (let i = 0; i < peers.length; i++) {
         try {
-          peers[i].p2p.receiveBlock(newBlock)
+          await peers[i].p2p.receiveBlock(newBlock)
         } catch (err) {
           console.log(chalk.red(`peer ${i} refused the block`))
           success = false
         }
       }
+
+      // publish nullifier
 
       // if all accept
       if (success) {
@@ -147,11 +149,11 @@ const blockCooker = {
     const [nfProof, cmProof, bitProof] = proof.split(':')
 
     const newBlock = {
-      id: lastBlock.parentId + 1,
+      id: lastBlock.parentId + 1 || 0,
       parentId: lastBlock.parentId,
       blockHash: null,
       parentHash: null,
-      root: "TODO: NEW ROOT",
+      root: await mktree.getCurrentRoot(),
       nullifier,
       cm: potentialSecret.cm,
       nfProof,
@@ -234,9 +236,9 @@ const storage = {
         // BLOCK 0
         const blockZero = {
           id: 0,
-          parentId: null,
+          parentId: 'NONE',
           blockHash: null,
-          parentHash: null,
+          parentHash: 'NONE',
           root: "TODO: FIRST ROOT",
           nullifier: null,
           cm: null,
@@ -276,8 +278,8 @@ const mktree = {
     return true
   },
 
-  getCurrentRoot: () => {
-    return 'THIS IS THE CURRENT ROOT'
+  getCurrentRoot: async () => {
+    return 'THIS IS THE CURRENT ROOT: "18174068908456306120150473174156806072743489183763912502460320123526599482158"'
   },
   // @return hashes of the mktree necessary for a fold-left(calculate the root with min info)
   getPath: (currentRoot, position) => {
