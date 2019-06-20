@@ -49,7 +49,7 @@ Prover file `transfer_secrets` takes a line of unlabelled values (some are tuple
 *  *r* - our secret with which to spend this commitment
 *  *v* - the value of the spent commitment (1)
 *  *flag* - the 'clean' flags of the spent commitment, eg 1 or 1155 ( =3*5*7*11 )
-*  *l1_sibling* - a tuple of the field value of the sibling of the ancestor on the first level of the Merkel tree, along with the direction in the tree of this value (0/1), eg 34567890098765434567,1
+*  *l1_sibling* - a tuple of the field value of the sibling of the ancestor on the first level of the Merkel tree, along with the direction in the tree of this value (true/false), eg 34567890098765434567,false
 *  *l2_sibling* - " " second level below root
 *  *l3_sibling* - " " third level below root, ie the sibling of our commitment
 *  *r'* - secret to attach to new commitment
@@ -88,7 +88,7 @@ Error: Signature mismatch:
          Expected declaration
        File "src/libsnark.ml", line 945, characters 4-27: Actual declaration
 ```
-Don't worry - run it again. 
+Don't worry - run it again.
 
 ### Requirements:
 
