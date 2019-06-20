@@ -69,7 +69,7 @@ async function main() {
           printHelp(cmd)
         } else if (cmd === 'status') {
           console.log(await peer.wallet.status())
-        } else if (cmd.startsWith('transfer')) {
+        } else if (cmd.startsWith('t')) {
           const targetId = parseInt(cmd.split(' ')[1].trim())
           console.log({targetId})
           if (isNaN(targetId)) {

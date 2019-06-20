@@ -74,6 +74,8 @@ const p2p = {
     // make everything(snarky: verify proof, blockexplore: nullifier absent)
     const proof = await snarky.generateProof(blockPrecursor, potentialSecret, nullifier)
 
+    console.inspect({ label: 'receiveTransfer:generateProof', proof })
+
     // write block
     const newBlock = await blockCooker.makeBlock(blockPrecursor, newCm)
 
@@ -183,8 +185,9 @@ const mktree = {
   getCurrentRoot: () => {
     return 'THIS IS A ROOT'
   },
+  // @return hashes of the mktree necessary for a fold-left(calculate the root with min info)
   getPath: (currentRoot, position) => {
-    // console.log({label: 'getPath', currentRoot, position })
+    // cli console.log({label: 'getPath', currentRoot, position })
 
     return [
       getRandomHash(4),
@@ -221,6 +224,7 @@ const mktree = {
 
 const snarky = {
   makeProof: async (currentRoot, secret) => {
+    // cli call currentRoot, secret => proof
     const proof = 'this is a proof'
     return proof
   },
