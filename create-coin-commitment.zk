@@ -3,7 +3,7 @@ open String;
 open Extended_lib;
 
 //mh0 is a Merkel tree root - only public input
-let main = fun ( mh0 : field), ()) => {
+let main = fun ( mh0 : field), (nf : field)()) => {
 
 // (1: validity & 2: ownership)
 // I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
@@ -74,11 +74,12 @@ TODO: // pass private inputs to Prover
   let y = Prover {
     Get the following:
     v : field, flag : field, l1_sibling : (field, boolean), l2_sibling : (field, boolean), l3_sibling : (field, boolean)
-    if (Field.is_square(x)) {
-      Field.sqrt(x);
-    } else {
-      0;
-    };
+   r,flag,r',flag', v ,v' //randomness and flag of the old and new cm (' are the new)
+   // if (Field.is_square(x)) {
+   //   Field.sqrt(x);
+   // } else {
+   //   0;
+   // };
   };
 
 
@@ -94,8 +95,8 @@ TODO: // pass private inputs to Prover
   let n = hash_nullifier_commitment (r, t);
 
   assert_r1(calculated_root, 1, M0);
-  assert_r1(t, 1, t);
-  assert_r1(v, 1, v);
-  assert_r1(flag, 1, flag);
-  assert_r1(n, 1, n);
+ // assert_r1(t, 1, t);
+  assert_r1(v, 1, v');
+  assert_r1(flag, 1, flag');
+  assert_r1(n, 1, nf);
 };
