@@ -9,7 +9,7 @@ Ref papers:
 ### Goal
 
 Making a very rough reimplementation of zero-cash like, adding a feature that coins are tainted (with a bit), and that while transferring in zero-knowledge we also prove that the taint is preserved. We only do shielded transactions, and everything has value 1.
-The state of the blockchain is a merkle tree containing commitements and a list of nullifier. 
+The state of the blockchain is a merkle tree containing commitements and a list of nullifier.
 
 ### Components to the blockchain peer + wallet:
 * JSON API
@@ -43,6 +43,19 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 * proof2: old cm existed in the tree corresponding to root
 * proof3: the flag is consistent (b_old = b_new)
 
+### Prover file content:
+Prover file `transfer_secrets` takes a line of unlabelled values (some are tuples):
+**
+*  *r* - our secret with which to spend this commitment
+*  *v* - the value of the spent commitment (1)
+*  *flag* - the 'clean' flags of the spent commitment, eg 1 or 1155 ( =3*5*7*11 )
+*  *l1_sibling* - a tuple of the field value of the sibling of the ancestor on the first level of the Merkel tree, along with the direction in the tree of this value (0/1), eg 34567890098765434567,1
+*  *l2_sibling* - " " second level below root
+*  *l3_sibling* - " " third level below root, ie the sibling of our commitment
+*  *r'* - secret to attach to new commitment
+*  *v'* - the value of the new commitment (1)
+*  *flag'* - the 'clean' flags of the new commitment, should be same as old one, eg 1 or 1155 ( =3*5*7*11 )
+
 ## Running the code
 
 ### Requirements:
@@ -59,9 +72,3 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 * in 3 of them, run `./startWallet.sh 0, 1 and 2`
 
 ...
-
-
-
-
-
-
