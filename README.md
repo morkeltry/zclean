@@ -72,6 +72,8 @@ Something like:
 ## Running the code
 
 `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
+`snarky_cli prove create-coin-commitment.zk 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504`
+
 
 #### NB:
 on first run, `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128` gives error:

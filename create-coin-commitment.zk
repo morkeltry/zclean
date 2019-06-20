@@ -80,8 +80,8 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
 // TODO: pass private inputs to Prover
   let (r, v, flag, tree_threeple, r', flag', v') =
     Prover {
-      let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = read_lines ("transfer_secrets") ;
-      //let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = [998, 1, 0, "4567,0", "7385,1", "2372,0", 999, 1, 0];
+      let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', v', flag' ] = read_lines ("transfer_secrets") ;
+      //let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', v', flag' ] = [998, 1, 0, "4567,0", "7385,1", "2372,0", 999, 1, 0];
 
       let sep = String.get (",",0i);
       let [l1_hash, l1_dir] = String.split_on_char(sep, l1_sib_string);
@@ -123,7 +123,6 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
   let n = hash_nullifier_commitment (r, t);
 
   assert_r1(calculated_root, 1, mh0);
- // assert_r1(t, 1, t);
   assert_r1(v, 1, v');
   assert_r1(flag, 1, flag');
   assert_r1(n, 1, nf);
