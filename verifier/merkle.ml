@@ -42,6 +42,12 @@ let get_root (tree : merkle_tree) =
   | `PartialNode(h,_) -> h
   | `Leaf(h) -> h
 
+let rec get_number_of_elements (tree: merkle_tree) =
+  match tree with
+  | `Node(_, l, r) -> get_number_of_elements l + get_number_of_elements r
+  | `PartialNode (_, l) -> get_number_of_elements l
+  | `Leaf _ -> 1
+
 let insert_leaf (tree : merkle_tree) x depth (pos : int64) =
   assert (pos >= 0L);
   assert  (pos <= pow 2L (Int64.of_int depth));
@@ -83,15 +89,9 @@ let insert_leaf (tree : merkle_tree) x depth (pos : int64) =
   propagate tree depth
 
 let get_witness (tree : merkle_tree) depth (pos : int64) =
-
-  (*not sure what happens when pos overflow *)
   assert (pos >= 0L);
-  (*Check that the position is not too big fro the tree*)
   assert  (pos <= pow 2L (Int64.of_int depth));
-  (*get the default values at all the hight*)
   let uncom = unco depth in
-  (* get the bits of position and put them in a boolean array
-     These bits represent whether the neighbourh in the authentication path is left or right*)
   let get_bits pos =
     let res = Array.make 64 true in
     let rec loop pos i =
@@ -106,7 +106,6 @@ let get_witness (tree : merkle_tree) depth (pos : int64) =
   in
   let array_pos = get_bits pos in
 
-  (*get the niehgbourgh hashes*)
   let get_hashes array =
     let res = Array.make depth (String.make 32 '0') in
     let rec aux i tree =
@@ -140,4 +139,4 @@ let get_witness (tree : merkle_tree) depth (pos : int64) =
     res
   in
   let hashes = get_hashes array_pos in
-  String.concat "" (Array.to_list hashes)
+  Array.to_list hashes
