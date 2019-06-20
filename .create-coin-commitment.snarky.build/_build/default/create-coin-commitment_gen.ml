@@ -427,10 +427,14 @@ let main (mh0 : Field.t) (nf : Field.t) () =
     Pedersen.digest_bits params pre_image in
   let hash_field (pre_image : Field.t) =
     Pedersen.digest_bits params (Field.to_bits pre_image) in
-  let order_fields (a : Field.t) (b_tuple : (Field.t * Boolean.var)) =
+  let order_nodes (a : Field.t) (b_tuple : (Field.t * Boolean.var)) =
     let (b, lr_bit_b) = b_tuple in
     Select.id (Select.tuple2 Select.field Select.field) lr_bit_b
       ~then_:(a, b) ~else_:(b, a) in
+  let hash_merkle_nodes (ordered_nodes_tuple : (Field.t * Field.t)) =
+    let node1_bool = Field.to_bits (fst ordered_nodes_tuple) in
+    let node2_bool = Field.to_bits (snd ordered_nodes_tuple) in
+    hash_bits (node1_bool @ node2_bool) in
   let hash_commitment (secret : Field.t) (val1 : Field.t) (val2 : Field.t) =
     let secret_bool = Field.to_bits secret in
     let val1_bool = Field.to_bits val1 in
@@ -440,11 +444,7 @@ let main (mh0 : Field.t) (nf : Field.t) () =
   let hash_nullifier_commitment (secret : Field.t) (n : Field.t) =
     let secret_bool = Field.to_bits secret in
     let n_bool = Field.to_bits n in
-    let hashable = secret_bool @ n_bool in hash_bits hashable in
-  let hash_merkle_nodes (ordered_nodes_tuple : (Field.t * Field.t)) =
-    let val1_bool = Field.to_bits (fst ordered_nodes_tuple) in
-    let val2_bool = Field.to_bits (snd ordered_nodes_tuple) in
-    hash_bits (val1_bool @ val2_bool) in
+    let hashable = secret_bool @ n_bool in hash_bits (secret_bool @ n_bool) in
   let (r, v, flag, tree_threeple, r', flag', v') =
     exists
       (Typ.tuple7 Field.typ Field.typ Field.typ
@@ -489,11 +489,11 @@ let main (mh0 : Field.t) (nf : Field.t) () =
                     flag', v')) in
   let t = hash_commitment r v flag in
   let (l1_sibling, l2_sibling, l3_sibling) = tree_threeple in
-  let level2_parent = hash_merkle_nodes (order_fields t l3_sibling) in
+  let level2_parent = hash_merkle_nodes (order_nodes t l3_sibling) in
   let level1_parent =
-    hash_merkle_nodes (order_fields level2_parent l2_sibling) in
+    hash_merkle_nodes (order_nodes level2_parent l2_sibling) in
   let calculated_root =
-    hash_merkle_nodes (order_fields level1_parent l1_sibling) in
+    hash_merkle_nodes (order_nodes level1_parent l1_sibling) in
   let n = hash_nullifier_commitment r t in
   assert_r1cs calculated_root (Field.constant (Field.Constant.of_string "1"))
     mh0;

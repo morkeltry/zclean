@@ -45,7 +45,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 
 ### Prover file content:
 Prover file `transfer_secrets` takes a line of unlabelled values (some are tuples):
-**
+
 *  *r* - our secret with which to spend this commitment
 *  *v* - the value of the spent commitment (1)
 *  *flag* - the 'clean' flags of the spent commitment, eg 1 or 1155 ( =3*5*7*11 )
@@ -55,6 +55,19 @@ Prover file `transfer_secrets` takes a line of unlabelled values (some are tuple
 *  *r'* - secret to attach to new commitment
 *  *v'* - the value of the new commitment (1)
 *  *flag'* - the 'clean' flags of the new commitment, should be same as old one, eg 1 or 1155 ( =3*5*7*11 )
+
+Something like:
+```
+998
+1
+0
+4567,0
+7385,1
+2372,0
+999
+1
+0
+```
 
 ## Running the code
 
