@@ -19,7 +19,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 * a wallet with the secrets necessary for the peer to spend the notes
 * a config with the port list
 
-### Adding a block(transferring something):
+### Adding a block(transferring something):
 
 * I want to transfer a note, I ask my peer to spend it by giving him the neccessary witness informations (aka I use my client, similar to using a full bitcoin node as a wallet) and he creates his own committement.
 * it generates the necessary ZKproofs
@@ -29,7 +29,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
   * else do nothing/reject
 * if it's accepted, the blockchain is now one block larger
 
-### Rules
+### Rules
 * start with a mktree, containing commitement of the type H(r,b).
 * utxo with 1 in 1 out, no values(or v = 1)
 * to transfer, share a zk with the person you are transferring  proving that you know the preimage
@@ -44,7 +44,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 * proof3: the flag is consistent (b_old = b_new)
 
 ### Prover file content:
-Prover file `transfer_secrets` takes a line of unlabelled values (some are tuples):
+Prover file `transfer_secrets` takes a lines of unlabelled values (some are tuples):
 
 *  *r* - our secret with which to spend this commitment
 *  *v* - the value of the spent commitment (1)
@@ -72,8 +72,10 @@ Something like:
 ## Running the code
 
 `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
+
 `snarky_cli prove create-coin-commitment.zk 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504`
-`snarky_cli verify create-coin-commitment.zk 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504 --proof create-coin-commitment_gen.zkp `
+
+`snarky_cli verify create-coin-commitment.zk --proof create-coin-commitment_gen.zkp 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504 `
 
 
 
@@ -94,7 +96,7 @@ Error: Signature mismatch:
 ```
 Don't worry - run it again.
 
-### Requirements:
+### Requirements:
 
 * Docker(to run the blockchain datastore)
 * Snarky installed (good luck with that)
