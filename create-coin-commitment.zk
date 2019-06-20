@@ -81,7 +81,6 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
   let (r, v, flag, tree_threeple, r', flag', v') =
     Prover {
       let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = read_lines ("transfer_secrets") ;
-
       //let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', flag', v' ] = [998, 1, 0, "4567,0", "7385,1", "2372,0", 999, 1, 0];
 
       let sep = String.get (",",0i);
@@ -95,7 +94,6 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
       let r = Field.of_string(r);
       let v = Field.of_string(v);
       let flag = Field.of_string(flag);
-  Field.print (r);
 
       let r' = Field.of_string(r');
       let v' = Field.of_string(v');
@@ -106,8 +104,6 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
       // r,flag,r',flag', v ,v'
 
 
-  // let level2_parent = hash_merkle_nodes (order_nodes (fst(l3_sibling), fst(l3_sibling)));
-  //Field.print (level2_parent);
       (r, v, flag, (l1_sibling, l2_sibling, l3_sibling), r', flag', v') ;
     };
 
