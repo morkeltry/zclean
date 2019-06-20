@@ -6,7 +6,7 @@ transfer_secrets
 *.vk
 
 #build dir
-# .create-coin-commitment.snarky.build/*
+.create-coin-commitment.snarky.build/
 
 # Logs
 
