@@ -5,12 +5,13 @@ const asyncRedis = require('async-redis')
 const Buslane = require('buslane')
 const chalk = require('chalk')
 const crypto = require('crypto')
+const hashObject = require('object-hash');
 
 const CONFIG = require('./config.json')
 
 const peerId = parseInt(process.argv[2])
 
-console.log({ peerId, args: process.argv })
+console.log(`Starting Peer with ID ${peerId}`)
 
 const config = CONFIG[peerId]
 
@@ -51,59 +52,74 @@ _.times(CONFIG.length).forEach(key => {
   }
 })
 
-// console.inspect(config)
-
 const buslane = new Buslane(config.buslane)
 
 const peers = Object.keys(buslane).filter(s => s.startsWith('peer')).map(peerName => buslane[peerName])
 
+
+// P2P
 const p2p = {
   ping: () => 'PONG',
   receiveTransfer: async (blockPrecursor) => {
-    console.inspect({ label: 'entering receive transfer', blockPrecursor })
+    try {
+      console.inspect({ label: 'entering receive transfer', receivedBlockPrecursor: blockPrecursor })
 
-    // create new cm
-    const potentialSecret = await mktree.makeSecret(blockPrecursor)
+      // create new cm
+      const potentialSecret = await mktree.makeSecret(blockPrecursor)
 
-    console.log({ label: 'receipt', potentialSecret })
+      console.log({ label: 'receiveTransfer:potentialSecret', potentialSecret })
 
-    const nullifier = await mktree.makeNullifier(blockPrecursor)
+      const nullifier = await mktree.makeNullifier(blockPrecursor)
 
-    console.log({ label: 'receiveTransfer', potentialSecret, nullifier })
+      console.log({ label: 'receiveTransfer:nullifier', nullifier })
 
-    // make everything(snarky: verify proof, blockexplore: nullifier absent)
-    const proof = await snarky.generateProof(blockPrecursor, potentialSecret, nullifier)
+      // make everything(snarky: verify proof, blockexplore: nullifier absent)
+      const proof = await snarky.generateProof(blockPrecursor, potentialSecret, nullifier)
 
-    console.inspect({ label: 'receiveTransfer:generateProof', proof })
+      console.inspect({ label: 'receiveTransfer:generateProof', proof })
 
-    // write block
-    const newBlock = await blockCooker.makeBlock(blockPrecursor, newCm)
+      // write block
+      const newBlock = await blockCooker.makeBlock(blockPrecursor, potentialSecret, proof, nullifier)
 
-    // propose the block
-    let success = true
-    for (let i = 0; i < peers.length; i++) {
-      try {
-        peers[i].p2p.receiveBlock()
+      // publish nullifier
 
-      } catch (err) {
-        console.log(chalk.red(`peer ${i} refused the block`))
-        success = false
+
+      // propose the block
+      let success = true
+      for (let i = 0; i < peers.length; i++) {
+        try {
+          peers[i].p2p.receiveBlock(newBlock)
+        } catch (err) {
+          console.log(chalk.red(`peer ${i} refused the block`))
+          success = false
+        }
       }
+
+      // if all accept
+      if (success) {
+        // Evolving
+        const newSecret = potentialSecret
+
+        // add the block
+        await storage.addBlock(newBlock)
+
+        // update the mktree
+        await mktree.addCm(newSecret.cm)
+
+        // store the secret values(to spend the new note)
+        await storage.addSecret(newSecret)
+
+        return 'Block accepted by network'
+      }
+
+      return 'Block refused by network'
+    } catch (err) {
+      console.inspect({ label: 'receiveTransfer:error', err })
     }
-
-    // if all accept
-    if (success) {
-      // add the block
-      await storage.addBlock(newBlock)
-      // update the mktree
-      await mktree.addCm(newCm)
-      // store the secret values(to spend the new note)
-      await storage.addSecretKey(sn)
-    }
-
-
   },
-  receiveBlock: async (block) => {
+  receiveBlock: async (proposedBlock) => {
+
+    console.inspect({ label: 'receiveBlock', proposedBlock })
 
     return 'Accepted'
     // check the block(snarky verify proof)
@@ -113,10 +129,40 @@ const p2p = {
   }
 }
 
-
+// BLOCKCOOKER
 const blockCooker = {
-  makeBlock: async () => {
-    return { label: 'Im a block' }
+  makeBlock: async (blockPrecursor, potentialSecret, proof, nullifier) => {
+
+    /*  potentialSecret:
+     const result = {
+      secretKey,
+      cm,
+      value: blockPrecursor.secret.value,
+      flag: blockPrecursor.secret.flag,
+    }
+    */
+
+    const lastBlock = await storage.getLastBlock()
+
+    const [nfProof, cmProof, bitProof] = proof.split(':')
+
+    const newBlock = {
+      id: lastBlock.parentId + 1,
+      parentId: lastBlock.parentId,
+      blockHash: null,
+      parentHash: null,
+      root: "TODO: NEW ROOT",
+      nullifier,
+      cm: potentialSecret.cm,
+      nfProof,
+      cmProof,
+      bitProof
+    }
+
+    newBlock.blockHash = hashObject(newBlock)
+    newBlock.parentHash = lastBlock.blockHash
+
+    return newBlock
   },
 
   makeBlockPrecursor: async ({ secret, currentRoot }) => {
@@ -137,18 +183,18 @@ function getRandomHash(size) {
   }, '')
 }
 
-
+// STORAGE
 const storage = {
   ns: {
     secrets: 'SECRETS',
     blocks: 'BLOCKS',
   },
+
   // secret: necesseraty information to spend cm, its object made of
   //   secretKey: private key to the cm
   //   flag: bit , clean or not
   //   value: note value
   //   path to the cm on the mktree
-
   getSecret: async () => {
     try {
       const lastSecretIndex = (await redis.llen(storage.ns.secrets)) - 1
@@ -172,18 +218,66 @@ const storage = {
     }
   },
 
+  addSecret: async (newSecret) => {
+    return await redis.lpush(storage.ns.secrets, JSON.stringify(newSecret))
+  },
+
+  // Return block 0 or last block
+  getLastBlock: async () => {
+    try {
+      const lastBlockIndex = (await redis.llen(storage.ns.blocks)) - 1
+      if (lastBlockIndex < 0) {
+        console.log('GENESIS BLOCK')
+
+        console.log('x')
+
+        // BLOCK 0
+        const blockZero = {
+          id: 0,
+          parentId: null,
+          blockHash: null,
+          parentHash: null,
+          root: "TODO: FIRST ROOT",
+          nullifier: null,
+          cm: null,
+          nfProof: null,
+          cmProof: null,
+          bitProof: null
+        }
+
+        console.log('y')
+
+        blockZero.blockHash = hashObject(blockZero)
+
+        return blockZero
+      }
+
+      return await redis.lindex(storage.ns.blocks, lastBlockIndex)
+    } catch (err) {
+      console.error(err)
+      throw new Error('Failed to get last block')
+    }
+  },
+
   addBlock: async (block) => {
-    return await redis.lpush(storage.ns.blocks, block)
+    return await redis.lpush(storage.ns.blocks, JSON.stringify(block))
   },
 
   addCm: async (cm) => {
-    return await redis.lpush(storage.ns.secrets, block)
+    return await redis.lpush(storage.ns.secrets, JSON.stringify(cm))
   }
 }
 
+// MKTREE
 const mktree = {
+  addCm: async () => {
+    // mktree server cli cm: addCm cm
+
+    return true
+  },
+
   getCurrentRoot: () => {
-    return 'THIS IS A ROOT'
+    return 'THIS IS THE CURRENT ROOT'
   },
   // @return hashes of the mktree necessary for a fold-left(calculate the root with min info)
   getPath: (currentRoot, position) => {
@@ -201,13 +295,18 @@ const mktree = {
     // cli call makeCm  value, flag, randomness(128bit) => hash(randomness, flag, value )
     const cm = 'THIS IS A CM Pedersen HASH'
 
-    console.inspect({label: 'makeSecret', blockPrecursor})
+    // console.inspect({
+    //   label: 'mktree:makeSecret', blockPrecursor: {
+    //     blockPrecursor,
+    //     value: blockPrecursor.value
+    //   }
+    // })
 
     const result = {
       secretKey,
       cm,
-      value: blockPrecursor.value,
-      flag: blockPrecursor.flag,
+      value: blockPrecursor.secret.value,
+      flag: blockPrecursor.secret.flag,
     }
 
     return result
@@ -222,6 +321,7 @@ const mktree = {
   }
 }
 
+// SNARKY
 const snarky = {
   makeProof: async (currentRoot, secret) => {
     // cli call currentRoot, secret => proof
@@ -235,7 +335,7 @@ const snarky = {
     //   potentialSecret
     //   nullifer
     //      => Proof
-    const string = 'THE PROOF: this is a sliceable bit string, maybe a file, depends on snarky'
+    const proof = 'PROOF1:PROOF2:PROOF3'
 
     return proof
   },
@@ -245,6 +345,7 @@ const snarky = {
   }
 }
 
+// WALLET
 const wallet = {
   status: async () => {
     return 'OK'
@@ -282,15 +383,13 @@ buslane.registerIngress('wallet', wallet)
 setInterval(async () => {
   for (let i = 0; i < peers.length; i++) {
     try {
-      console.log(`${(new Date()).getTime()}: peer ${i} says ${await peers[i].p2p.ping()}`)
+      // console.log(`${(new Date()).getTime()}: peer ${i} says ${await peers[i].p2p.ping()}`)
     } catch (err) {
       console.log(chalk.red(`could not get heartbeat from peer ${i}`))
     }
   }
 
 }, 2000)
-
-
 
 process.on('uncaughtException', function (err) {
   console.inspect(err)
