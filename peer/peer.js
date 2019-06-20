@@ -1,8 +1,10 @@
 'use strict'
+
 const _ = require('lodash')
 const asyncRedis = require('async-redis')
 const Buslane = require('buslane')
 const chalk = require('chalk')
+const crypto = require('crypto')
 
 const CONFIG = require('./config.json')
 
@@ -49,7 +51,7 @@ _.times(CONFIG.length).forEach(key => {
   }
 })
 
-console.inspect(config)
+// console.inspect(config)
 
 const buslane = new Buslane(config.buslane)
 
@@ -58,12 +60,23 @@ const peers = Object.keys(buslane).filter(s => s.startsWith('peer')).map(peerNam
 const p2p = {
   ping: () => 'PONG',
   receiveTransfer: async (blockPrecursor) => {
-    // check everything(snarky: verify proof, blockexplore: nullifier absent)
-    const valid = await snarky.verifyProof(blockPrecursor)
+    console.inspect({ label: 'entering receive transfer', blockPrecursor })
+
     // create new cm
-    const newCm = await snarky.makeCm(blockPrecursor)
+    const potentialSecret = await mktree.makeSecret(blockPrecursor)
+
+    console.log({ label: 'receipt', potentialSecret })
+
+    const nullifier = await mktree.makeNullifier(blockPrecursor)
+
+    console.log({ label: 'receiveTransfer', potentialSecret, nullifier })
+
+    // make everything(snarky: verify proof, blockexplore: nullifier absent)
+    const proof = await snarky.generateProof(blockPrecursor, potentialSecret, nullifier)
+
     // write block
     const newBlock = await blockCooker.makeBlock(blockPrecursor, newCm)
+
     // propose the block
     let success = true
     for (let i = 0; i < peers.length; i++) {
@@ -88,7 +101,9 @@ const p2p = {
 
 
   },
-  receiveBlock: (block) => {
+  receiveBlock: async (block) => {
+
+    return 'Accepted'
     // check the block(snarky verify proof)
     // if all good
     // add the block
@@ -103,10 +118,9 @@ const blockCooker = {
   },
 
   makeBlockPrecursor: async ({ secret, currentRoot }) => {
-    console.log('makeBlockPrecursor')
+    // console.log('makeBlockPrecursor')
     const path = await mktree.getPath(currentRoot, secret.position)
-
-
+    // console.log('succesMaking block prec')
     return { secret, currentRoot, path }
   }
 }
@@ -170,19 +184,55 @@ const mktree = {
     return 'THIS IS A ROOT'
   },
   getPath: (currentRoot, position) => {
-    console.log({label: 'getPath', currentRoot, position })
+    // console.log({label: 'getPath', currentRoot, position })
 
     return [
       getRandomHash(4),
       getRandomHash(4),
       getRandomHash(4),
     ]
+  },
+  makeSecret: async (blockPrecursor) => {
+    const secretKey = crypto.randomBytes(16)
+
+    // cli call makeCm  value, flag, randomness(128bit) => hash(randomness, flag, value )
+    const cm = 'THIS IS A CM Pedersen HASH'
+
+    console.inspect({label: 'makeSecret', blockPrecursor})
+
+    const result = {
+      secretKey,
+      cm,
+      value: blockPrecursor.value,
+      flag: blockPrecursor.flag,
+    }
+
+    return result
+  },
+
+  makeNullifier: async (blockPrecursor) => {
+    // cli call makeNulifier value, flag, blockPrecursor.secretKey => hash(hash(secretKey, flagValue), secretKey)
+
+    const nullifier = 'This is a perdesen hashed Nullifer'
+
+    return nullifier
   }
 }
 
 const snarky = {
   makeProof: async (currentRoot, secret) => {
     const proof = 'this is a proof'
+    return proof
+  },
+
+  generateProof: (blockPrecursor, potentialSecret, nullifier) => {
+    // cli call snarky_cli TBD
+    //   bp { secret, currentRoot, path }
+    //   potentialSecret
+    //   nullifer
+    //      => Proof
+    const string = 'THE PROOF: this is a sliceable bit string, maybe a file, depends on snarky'
+
     return proof
   },
 
@@ -207,12 +257,15 @@ const wallet = {
     const proof = await snarky.makeProof(currentRoot, secret)
 
     console.log(4)
-    const blockPrecursor = await blockCooker.makeBlockPrecursor({ secret, currentRoot })
 
-    console.inspect({ secretKey, currentRoot, blockPrecursor })
+    const blockPrecursor = await blockCooker.makeBlockPrecursor({ secret, currentRoot })
+    // console.log({blockPrecursor})
+
+    // console.inspect({ secretKey, currentRoot, blockPrecursor })
     // pass it to targetPeer
     console.log(5)
-    const res = await peers[targetPeer].receiveTransfer(blockPrecursor)
+    console.log({ targeted: peers[targetPeer] })
+    const res = await peers[targetPeer].p2p.receiveTransfer(blockPrecursor)
 
     return 'DONE'
   }

@@ -76,10 +76,6 @@ async function main() {
             throw new Error('Invalid peer')
           }
 
-          if (targetId === peerId) {
-            throw new Error('That\'s you')
-          }
-
           await peer.wallet.transfer(targetId)
         } else {
           printHelp(null, `Unrecognized Command: ${cmd}`)
@@ -88,7 +84,7 @@ async function main() {
       await wait(1300)
     } catch (err) {
       console.log(chalk.red('Error'))
-      console.log(err)
+      console.log({err})
       await wait(1300)
     }
   }
