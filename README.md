@@ -51,11 +51,16 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 * Snarky installed (good luck with that)
 * node.js to run the client
 
-### Starting the peers
+### Starting a demo env
 
 * `docker-compose up` to start the redis instances
-* `./peer \[PeerNumber, 0 1 or 2\]` to start
-* `node client.js \[PeerNumber, 0 1 or 2\]`
+* open 6 term windows
+* in 3 of them, run `./startPeer.sh 0, 1 and 2`
+* in 3 of them, run `./startWallet.sh 0, 1 and 2`
+
+...
+
+
 
 
 
