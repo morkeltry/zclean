@@ -80,6 +80,16 @@ Something like:
 
 ## Running the code
 
+#### install snarky
+```
+git clone https://github.com/o1-labs/snarky.git
+cd snarky
+git branch zk-workshop
+dune build
+dune install
+cd ..
+```
+
 #### testing the raw commitment, importing your own commitment and Merkel tree data
 `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
 
