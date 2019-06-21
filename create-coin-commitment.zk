@@ -109,7 +109,7 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
 //  Field.print (level2_parent);
       (r, v, flag, (l1_sibling, l2_sibling, l3_sibling), r', flag', v') ;
     };
-
+ 
   let t = hash_commitment (r, v, flag);
 //  let t' = hash_commitment (r',v',flag');
 

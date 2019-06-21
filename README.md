@@ -1,4 +1,3 @@
-# ZClean
 
 Ref papers:
 
@@ -19,7 +18,6 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 - the blockchain, on a Redis list
 - a wallet with the secrets necessary for the peer to spend the notes
 - a config with the port list
-
 ### Adding a block(transferring something):
 
 - I want to transfer a note, I ask my peer to spend it by giving him the neccessary witness informations (aka I use my client, similar to using a full bitcoin node as a wallet) and he creates his own committement.
@@ -28,6 +26,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 - the receiver verify all proofs and
   - if successful broadcast it to the network
   - else do nothing/reject
+  # ZClean
 - if it's accepted, the blockchain is now one block larger
 
 
@@ -46,6 +45,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 - new cm
 - proof1: nf is computed correctly
 - proof2: old cm existed in the tree corresponding to root
+
 - proof3: the flag is consistent (b_old = b_new)
 
 ### Prover file content:
@@ -63,6 +63,27 @@ Prover file `transfer_secrets` takes a lines of unlabelled values (some are tupl
 
 The discards flag does not work in the current version of snarky and will cause a `Match_failure` exception due to unexpected file length
 *  *discards* - always 1 in the case that the same flags are carried through
+
+Something like:
+```
+3458764513820540928
+1
+0
+7433729977631823532505452732695923773122210654810903057685629706603992852240,true
+15288571477637851994690209293501105771757308379597462518238826192746159551987,false
+1592181160691996129005532446482721103987578452528597022169202402534844066154,true
+999
+1
+0
+```
+
+## Running the code
+
+`snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
+
+`snarky_cli prove create-coin-commitment.zk 12487572442786697255769734422561910143134627962470873525166458867517877935051 11431946377964512669499131572242457906889915470048508955778605307618910933504 `
+
+`snarky_cli verify create-coin-commitment.zk --proof create-coin-commitment_gen.zkp 12123375568978657359272076418017180258742331462919823544269692050729161753928`
 
 
 #### NB:
