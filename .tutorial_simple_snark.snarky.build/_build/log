@@ -1,0 +1,4 @@
+# dune exec --root .tutorial_simple_snark.snarky.build ./tutorial_simple_snark_gen.exe -- verify snarky-examples/advanced_big_root.zk --verification-key=tutorial_simple_snark.vk 2 8
+# OCAMLPARAM: unset
+$ /usr/bin/nproc > /tmp/dunee69782.output 2> /dev/null
+$ /home/laff/.opam/4.07.1/bin/ocamlc.opt -config > /tmp/duneb9d28f.output

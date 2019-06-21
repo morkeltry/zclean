@@ -1,14 +1,13 @@
 
-open String;
 open Extended_lib;
 
-//TODO: change lr_bit to Boolean, do multiplication outside prover scope
-let main = fun (r : field, v : field, flag : field, n : field, M0 : field, M1 : field, M2 : field, M3 : field, lr_bit : field, ()) => {
+//mh0 is a Merkel tree root - only public input
+let main = fun ( mh0 : field, nf : field, ()) => {
 
 // (1: validity & 2: ownership)
 // I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
 // ie, hashed with its Merkel sibling M3, then all hashed with Merkel parent M2, then all hashed with Merkel grandparent M1
-// gives Merkel root M0
+// gives Merkel root mh0
 
 // Further I (2) know a secret r, a value v and flag which concatenated and hashed give t.
 
@@ -25,52 +24,106 @@ let main = fun (r : field, v : field, flag : field, n : field, M0 : field, M1 : 
 // My output commitment has the same flag to the flag of the previous commitment
 
 // (5: nullifiability)
-// The nullifier n refers to that commitment t.
-// ie r*n=t
+// The nullifier n refers to that commitment t and is signed.
+// ie n = hash (r,t)
+
+//NB: In variable names, xxx_bool is generally used to refer to the list(boolean) version of a value. _Not_ bool/ list(bool) !
 
 
+let params = load_pedersen_params("./constants/bn128-params");
 
-// TODO : use list(bool) not string
-let hash_string = fun (pre_image : list(bool)) => {
-  let params = "bn128-params";
+let hash_bits = fun (pre_image : list(boolean)) => {
   Pedersen.digest_bits(params, pre_image);
 };
 
+let hash_field = fun (pre_image : field) => {
+  Pedersen.digest_bits(params, Field.to_bits(pre_image));
+};
 
-// TODO : use list(bool) not string
+let order_nodes = fun (a: field, b_tuple: (field, boolean)) => {
+  let (b, lr_bit_b) = b_tuple;
+  select(lr_bit_b, ~then_=(a,b), ~else_=(b,a));
+
+  // result
+  // .append (dir*a, not dir*b, not dir * a, dir * b)
+  // .filter (nonzero)
+  // .map (field -> list(bool))
+  // result[0]::result[1];
+};
+
+let hash_merkle_nodes = fun (ordered_nodes_tuple : (field, field)) => {
+  let node1_bool = Field.to_bits( fst(ordered_nodes_tuple) );
+  let node2_bool = Field.to_bits( snd(ordered_nodes_tuple) );
+
+  hash_bits ( node1_bool @ node2_bool ) ;
+};
+
 let hash_commitment = fun (secret : field, val1 : field, val2 : field) =>  {
-  let secret_string = to_string(secret);
-  let val1_string = to_string(val1);
-  let val2_string = to_stringt(val2);
-  let hashable = String.concat(String.concat(secret_string,val1),val2);
+  let secret_bool = Field.to_bits(secret);
+  let val1_bool = Field.to_bits(val1);
+  let val2_bool = Field.to_bits(val2);
+  let hashable = secret_bool@val1_bool@val2_bool ;
 
-  hash_string(hashable);
+  //TODO: check bit length of 3way concat (defaults are OK? )
+  hash_bits(hashable);
 };
 
-// TODO : use list(bool) not string
-let hash_merkle_nodes = fun (n1 : field, n2 : field) => {
-  let val1_string = to_string(val1);
-  let val2_string = to_string(val2);
+let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
+  let secret_bool = Field.to_bits(secret);
+  let n_bool = Field.to_bits(n);
+  let hashable = secret_bool@n_bool ;
 
-  hash_string (String.concat(val1_string,val2_string)) ;
+  hash_bits (secret_bool@n_bool);
 };
 
-let t = hashed_concat (r,v,flag)
-// TODO: currently HM(M3,t) != HM(t,M3) - fix this so that either HM takes a direction, or HM(M3,t) == HM(t,M3)
-// in such a way that M3 cannot be faked to give desired result. (commutative non-invertible operation possible?)
-let calculated_root = hash_merkle_nodes = (HM (M1, HM (M2, HM (M3, t)));
 
-  let y = Prover {
-    if (Field.is_square(x)) {
-      Field.sqrt(x);
-    } else {
-      0;
+// TODO: pass private inputs to Prover
+  let (r, v, flag, tree_threeple, r', flag', v') =
+    Prover {
+      let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', v', flag' ] = read_lines ("transfer_secrets") ;
+      //let [r, v, flag, l1_sib_string, l2_sib_string, l3_sib_string, r', v', flag' ] = [998, 1, 0, "4567,0", "7385,1", "2372,0", 999, 1, 0];
+
+      let sep = String.get (",",0i);
+      let [l1_hash, l1_dir] = String.split_on_char(sep, l1_sib_string);
+      let l1_sibling = (Field.of_string(l1_hash), Stdlib.bool_of_string(l1_dir)) ;
+      let [l2_hash, l2_dir] =  String.split_on_char(sep, l2_sib_string);
+      let l2_sibling = (Field.of_string(l2_hash), Stdlib.bool_of_string(l2_dir)) ;
+      let [l3_hash, l3_dir] =  String.split_on_char(sep, l3_sib_string);
+      let l3_sibling = (Field.of_string(l3_hash), Stdlib.bool_of_string(l3_dir)) ;
+
+      let r = Field.of_string(r);
+      let v = Field.of_string(v);
+      let flag = Field.of_string(flag);
+
+      let r' = Field.of_string(r');
+      let v' = Field.of_string(v');
+      let flag' = Field.of_string(flag');
+
+      //  Get the following:
+      //  v : field, flag : field, l1_sibling : (field, boolean), l2_sibling : (field, boolean), l3_sibling : (field, boolean)
+      // r,flag,r',flag', v ,v'
+
+
+//   let level2_parent = hash_merkle_nodes (order_nodes (fst(l3_sibling), fst(l3_sibling)));
+//  Field.print (level2_parent);
+      (r, v, flag, (l1_sibling, l2_sibling, l3_sibling), r', flag', v') ;
     };
-  };
 
-  assert_r1(calculated_root, 1, M0);
-  assert_r1(hash_commitment(r,v,flag), 1, t);
-  assert_r1(v, 1, v);
-  assert_r1(flag, 1, flag);
-  assert_r1(r, n, t);
+  let t = hash_commitment (r, v, flag);
+
+  let (l1_sibling, l2_sibling, l3_sibling) = tree_threeple;
+
+
+  let level2_parent = hash_merkle_nodes(order_nodes(t, l3_sibling));
+  let level1_parent = hash_merkle_nodes(order_nodes(level2_parent, l2_sibling));
+  let calculated_root = hash_merkle_nodes(order_nodes(level1_parent, l1_sibling));
+
+  // nullifier will require second hashing with secret in order to sign that it refers to this commitment and not another
+  // maliciously signed with the same secret but different values
+  let n = hash_nullifier_commitment (r, t);
+
+  assert_r1(calculated_root, 1, mh0);
+  assert_r1(v, 1, v');
+  assert_r1(flag, 1, flag');
+  assert_r1(n, 1, nf);
 };

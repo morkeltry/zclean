@@ -1,3 +1,13 @@
+# All yr scretzzz
+transfer_secrets
+
+# proving and verification keys - we could also keep these up on Github no probs
+*.pk
+*.vk
+
+#build dir
+.create-coin-commitment.snarky.build/
+
 # Logs
 
 dump.rdb
@@ -62,3 +72,5 @@ typings/
 
 # next.js build output
 .next
+
+_build/

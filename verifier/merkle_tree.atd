@@ -1,0 +1,5 @@
+type merkle_tree = [
+  Leaf of string
+  | Node of (string * merkle_tree * merkle_tree)
+  | PartialNode of (string * merkle_tree)
+]
