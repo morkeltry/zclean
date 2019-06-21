@@ -128,6 +128,6 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
   assert_r1(calculated_root, 1, mh0);
   assert_r1(v, 1, v');
   assert_r1(flag, 1, flag');
-  assert_r1(n, 1, nf);
+//  assert_r1(n, 1, nf);
 //  assert_r1(t',1,cm_new);
 };
