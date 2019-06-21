@@ -31,7 +31,7 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 - if it's accepted, the blockchain is now one block larger
 
 
-### Rules
+### Rules
 
 - start with a mktree, containing commitement of the type H(r,b).
 - utxo with 1 in 1 out, no values(or v = 1)
@@ -80,12 +80,19 @@ Something like:
 
 ## Running the code
 
+#### testing the raw commitment, importing your own commitment and Merkel tree data
 `snarky_cli generate-keys create-coin-commitment.zk --curve Bn128`
 
-`snarky_cli prove create-coin-commitment.zk 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504`
+`snarky_cli prove create-coin-commitment.zk 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504
+18327458394584782076418017180258742331462919823545938573930575720020284562850`
 
-`snarky_cli verify create-coin-commitment.zk --proof create-coin-commitment_gen.zkp 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504 `
+`snarky_cli verify create-coin-commitment.zk --proof create-coin-commitment_gen.zkp 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504 15395739576093065984065038593017180258742331462919823544269487385743839305867`
 
+The first paramteter to the proof is the root of a Merkle tree;
+The second is the nullifier, ie your secret, hashed with the hash of (your secret concatenated with your spent commitment).
+The third is the new commitment (does not need to be in the tree yet)
+
+Other than requiring the correct chosen inputs, parameter 3 is independent from the others and parameter 1 depends on a tree calclulated  from parameter 2.
 
 
 #### NB:
