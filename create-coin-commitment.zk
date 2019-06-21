@@ -2,7 +2,7 @@
 open Extended_lib;
 
 //mh0 is a Merkel tree root - only public input
-let main = fun ( mh0 : field, nf : field, ()) => {
+let main = fun ( mh0 : field, nf : field, cm_new : field ()) => {
 
 // (1: validity & 2: ownership)
 // I (1) know a route through the merkel tree {M0, M1, M2, M3} leading to a commitment we call t
@@ -110,6 +110,7 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
     };
 
   let t = hash_commitment (r, v, flag);
+  let t' = hash_commitment (r',v',flag');
 
   let (l1_sibling, l2_sibling, l3_sibling) = tree_threeple;
 
@@ -126,4 +127,5 @@ let hash_nullifier_commitment = fun (secret : field, n : field) =>  {
   assert_r1(v, 1, v');
   assert_r1(flag, 1, flag');
   assert_r1(n, 1, nf);
+  assert_r1(t',1,cm_new)
 };
