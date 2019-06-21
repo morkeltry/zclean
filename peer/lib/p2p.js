@@ -58,6 +58,8 @@ const p2p = (peers, mktree, snarky, blockCooker, storage) => {
           // store the secret values(to spend the new note)
           await storage.addSecret(newSecret)
 
+          console.log(chalk.grey(`added block wiht hash  `) + newBlock.blockHash)
+
           return 'Block accepted by network'
         }
 
