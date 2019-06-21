@@ -64,27 +64,28 @@ async function main() {
     const cmd = await prompt(`peer${peerId}>`)
 
     try {
-
-        if (cmd.startsWith('help')) {
-          printHelp(cmd)
-        } else if (cmd === 'status') {
-          console.log(await peer.wallet.status())
-        } else if (cmd.startsWith('t')) {
-          const targetId = parseInt(cmd.split(' ')[1].trim())
-          console.log({targetId})
-          if (isNaN(targetId)) {
-            throw new Error('Invalid peer')
-          }
-
-          await peer.wallet.transfer(targetId)
-        } else {
-          printHelp(null, `Unrecognized Command: ${cmd}`)
+      if (cmd.startsWith('help')) {
+        printHelp(cmd)
+      } else if (cmd === 's') {
+        console.log(await peer.wallet.status())
+      } else if (cmd.startsWith('t')) {
+        const targetId = parseInt(cmd.split(' ')[1].trim())
+        console.log({ targetId })
+        if (isNaN(targetId)) {
+          throw new Error('Invalid peer')
         }
+
+        console.log(await peer.wallet.transfer(targetId))
+      } else if (cmd === 'b') {
+        console.log(await peer.wallet.balance())
+      } else {
+        printHelp(null, `Unrecognized Command: ${cmd}`)
+      }
 
       await wait(1300)
     } catch (err) {
       console.log(chalk.red('Error'))
-      console.log({err})
+      console.log({ err })
       await wait(1300)
     }
   }
@@ -96,6 +97,6 @@ async function main() {
   }
 }
 
-process.on('uncaughtException', function (err) {})
+process.on('uncaughtException', function (err) { })
 
 main().then(console.log).catch(console.error)

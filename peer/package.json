@@ -22,5 +22,36 @@
   "devDependencies": {
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^5.0.0"
+  },
+  "prettier": {
+    "semi": false,
+    "useTabs": false,
+    "singleQuote": true,
+    "tabWidth": 2
+  },
+  "eslintConfig": {
+    "rules": {
+      "no-undef": 2,
+      "no-console": 0,
+      "strict": [
+        2,
+        "global"
+      ],
+      "indent": [
+        "error",
+        2
+      ]
+    },
+    "parserOptions": {
+      "ecmaVersion": 2017
+    },
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "extends": [
+      "prettier",
+      "eslint:recommended"
+    ]
   }
 }
