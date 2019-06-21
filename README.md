@@ -99,7 +99,9 @@ cd ..
 `snarky_cli verify create-coin-commitment.zk --proof create-coin-commitment_gen.zkp 12123375568978657359272076418017180258742331462919823544269692050729161753928 11431946377964512669499131572242457906889915470048508955778605307618910933504 15395739576093065984065038593017180258742331462919823544269487385743839305867`
 
 The first paramteter to the proof is the root of a Merkle tree;
-The second is the nullifier, ie your secret, hashed with the hash of (your secret concatenated with your spent commitment).
+
+The second is the nullifier, ie your secret, hashed with the hash of (your secret concatenated with your spent commitment);
+
 The third is the new commitment (does not need to be in the tree yet)
 
 Other than requiring the correct chosen inputs, parameter 3 is independent from the others and parameter 1 depends on a tree calclulated  from parameter 2.
