@@ -5,6 +5,9 @@ transfer_secrets
 *.pk
 *.vk
 
+# swap files
+*.swp
+
 #build dir
 .create-coin-commitment.snarky.build/
 
