@@ -20,30 +20,30 @@ let hash n = pedersen_hash n ""
 
 let tree_height = 4
 
-let read_tree () =
+let read_tree fname =
   let open Yojson in
   let open Core in
-  let t = In_channel.read_all "tree.json" in
+  let t = In_channel.read_all fname in
   let buf = Bi_outbuf.create 100 in
   let lexer_state = init_lexer ~buf:buf ~lnum:0 ~fname:"" () in
   let lexbuf = Lexing.from_string t in
   Merkle_tree_j.read_merkle_tree lexer_state lexbuf
 
-let write_tree t =
+let write_tree fname t =
   let buf = Bi_outbuf.create 100 in
   let _ = Merkle_tree_j.write_merkle_tree buf t in
-  Core_kernel.Out_channel.write_all "tree.json" ~data:(Bi_outbuf.contents buf)
+  Core_kernel.Out_channel.write_all fname ~data:(Bi_outbuf.contents buf)
 
-let make_initial_tree () =
+let make_initial_tree fname =
   let secret = "secret10" in
   let r = string_to_bigint secret in
   Printf.printf "Secret: %s\n" (Big_int.string_of_big_int r);
   let cm = hash secret in
   let t = create_tree cm tree_height in
-  write_tree t
+  write_tree fname t
 
-let get_path root pos =
-  let t = read_tree () in
+let get_path fname root pos =
+  let t = read_tree fname in
   let current_root = Merkle.get_root t in
   if root = current_root then
     let hashes = Merkle.get_witness t tree_height (Int64.of_int pos) in
@@ -57,20 +57,21 @@ let make_commitment value flag r =
 let make_nullifier value flag sk =
   Printf.printf "%s\n" @@ hash @@ (hash (sk ^ flag ^ value)) ^ sk
 
-let add_commitment cm =
-  let t = read_tree () in
+let add_commitment fname cm =
+  let t = read_tree fname in
   let pos = Int64.of_int (Merkle.get_number_of_elements t) in
   let t = Merkle.insert_leaf t cm tree_height pos in
-  write_tree t
+  write_tree fname t
 
 let () =
   let open Cmdliner in
 
-  let init_tree_t = Term.(const make_initial_tree $ const ()), Term.info "init-tree" in
+  let fname = Arg.(value & pos 0 string "" & info []) in
+  let init_tree_t = Term.(const make_initial_tree $ fname), Term.info "init-tree" in
 
-  let root = Arg.(value & pos 0 string "" & info []) in
-  let pos = Arg.(value & pos 1 int 0 & info []) in
-  let get_path_t = Term.(const get_path $ root $ pos), Term.info "get-path" in
+  let root = Arg.(value & pos 1 string "" & info []) in
+  let pos = Arg.(value & pos 2 int 0 & info []) in
+  let get_path_t = Term.(const get_path $ fname $ root $ pos), Term.info "get-path" in
 
   let v = Arg.(value & pos 0 string "" & info []) in
   let flag = Arg.(value & pos 1 string "" & info []) in
@@ -78,8 +79,8 @@ let () =
   let make_commitment_t = Term.(const make_commitment $ v $ flag $ r), Term.info "make-cm" in
   let make_nullifier_t = Term.(const make_nullifier $ v $ flag $ r), Term.info "make-nullifier" in
 
-  let cm = Arg.(value & pos 0 string "" & info []) in
-  let add_commitment_t = Term.(const add_commitment $ cm), Term.info "add-cm" in
+  let cm = Arg.(value & pos 1 string "" & info []) in
+  let add_commitment_t = Term.(const add_commitment $ fname $ cm), Term.info "add-cm" in
 
   let cmds = [init_tree_t; get_path_t; make_commitment_t; make_nullifier_t; add_commitment_t] in
   Term.(exit @@ eval_choice init_tree_t cmds)
