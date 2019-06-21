@@ -5,8 +5,18 @@ transfer_secrets
 *.pk
 *.vk
 
-#build dir
+# swap files
+*.swp
+
+# build dir
 .create-coin-commitment.snarky.build/
+
+# some build files
+.create-coin-commitment-multiflag.snarky.build/.merlin
+.create-coin-commitment-multiflag.snarky.build/create-coin-commitment-multiflag_gen.ml
+.create-coin-commitment-multiflag.snarky.build/dune
+.create-coin-commitment-multiflag.snarky.build/dune-project
+
 
 # Logs
 

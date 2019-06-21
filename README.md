@@ -60,6 +60,8 @@ Prover file `transfer_secrets` takes a lines of unlabelled values (some are tupl
 *  *r'* - secret to attach to new commitment
 *  *v'* - the value of the new commitment (1)
 *  *flag'* - the 'clean' flags of the new commitment, should be same as old one, eg 1 or 1155 ( =3*5*7*11 )
+
+The discards flag does not work in the current version of snarky and will cause a `Match_failure` exception due to unexpected file length
 *  *discards* - always 1 in the case that the same flags are carried through
 
 
@@ -74,7 +76,6 @@ Something like:
 999
 1
 0
-1
 ```
 
 ## Running the code
