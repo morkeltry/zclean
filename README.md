@@ -1,4 +1,6 @@
 
+ # ZClean
+  
 Ref papers:
 
 - [ZeroCash paper](http://zerocash-project.org/media/pdf/zerocash-oakland2014.pdf)
@@ -9,6 +11,8 @@ Ref papers:
 
 Making a very rough reimplementation of zero-cash like, adding a feature that coins are tainted (with a bit), and that while transferring in zero-knowledge we also prove that the taint is preserved. We only do shielded transactions, and everything has value 1.
 The state of the blockchain is a merkle tree containing commitements and a list of nullifier.
+
+We will be using Snarky (an explanation of the idea behind Snarky is [https://blockchain.works-hub.com/learn/snarky-a-high-level-language-for-verifiable-computation-25c02](here) )
 
 ### Components to the blockchain peer + wallet:
 
@@ -26,7 +30,6 @@ The state of the blockchain is a merkle tree containing commitements and a list 
 - the receiver verify all proofs and
   - if successful broadcast it to the network
   - else do nothing/reject
-  # ZClean
 - if it's accepted, the blockchain is now one block larger
 
 
