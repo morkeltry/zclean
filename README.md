@@ -12,7 +12,7 @@ Ref papers:
 Making a very rough reimplementation of zero-cash like, adding a feature that coins are tainted (with a bit), and that while transferring in zero-knowledge we also prove that the taint is preserved. We only do shielded transactions, and everything has value 1.
 The state of the blockchain is a merkle tree containing commitements and a list of nullifier.
 
-We will be using Snarky (an explanation of the idea behind Snarky is [https://blockchain.works-hub.com/learn/snarky-a-high-level-language-for-verifiable-computation-25c02](here) )
+We will be using Snarky (an explanation of the idea behind Snarky is [here](https://blockchain.works-hub.com/learn/snarky-a-high-level-language-for-verifiable-computation-25c02) )
 
 ### Components to the blockchain peer + wallet:
 
