@@ -11,7 +11,7 @@
   "dependencies": {
     "async-prompt": "^1.0.1",
     "async-redis": "^1.1.7",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "buslane": "^2.2.0",
     "chalk": "^2.4.2",
     "clear": "^0.1.0",
